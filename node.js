@@ -1,17 +1,18 @@
 const express = require('express')
 const randomstring = require("randomstring")
 const http = require('http')
+const os = require('os');
 
 require('dotenv').config()
 
 const app = express()
 const app_id = randomstring.generate()
 
-const host = process.env.HOST
+const host = process.env.HOST || os.hostname()
 const port = parseInt(process.env.PORT)
 
-const registerHost = process.env.REGISTER_HOST
-const registerPort = parseInt(process.env.REGISTER_PORT)
+const registarHost = process.env.REGISTAR_HOST
+const registarPort = parseInt(process.env.REGISTAR_PORT)
 
 const state = {
     unique: Math.floor(Math.random() * 100),
@@ -19,15 +20,17 @@ const state = {
 }
 
 app.get('/', (req, res) => {
-    res.send('Hello World!')
+    logRequest(req);
+    res.send(`Hello World from ${host}!`)
 })
 
 app.get('/set-common', function (req, res) {
+    logRequest(req);
     state.common = parseInt(req.query.common)
 
     http.request({
-        host: registerHost,
-        port: registerPort,
+        host: registarHost,
+        port: registarPort,
         path: `/get-state`,
         method: 'GET'
     }, (response) => {
@@ -50,7 +53,7 @@ app.get('/set-common', function (req, res) {
                 }).end();
             });
         });
-        
+
     }).end()
 
     res.send(JSON.stringify({
@@ -60,6 +63,7 @@ app.get('/set-common', function (req, res) {
 })
 
 app.get('/sync', function (req, res) {
+    logRequest(req);
     state.common = parseInt(req.query.common)
 
     res.send(JSON.stringify({
@@ -69,6 +73,7 @@ app.get('/sync', function (req, res) {
 })
 
 app.get('/get-test', function (req, res) {
+    logRequest(req);
     res.send(JSON.stringify({
         app_id,
         state,
@@ -77,25 +82,38 @@ app.get('/get-test', function (req, res) {
 })
 
 const server = app.listen(port, () => {
+    console.log(`Registering to http://${registarHost}:${registarPort}`)
     http.request({
-        host: registerHost,
-        port: registerPort,
+        host: registarHost,
+        port: registarPort,
         path: `/register?host=${host}&port=${port}`,
         method: 'GET'
     }).end()
 
-    console.log(`Example app listening at http://${host}:${port}`)
+    console.log(`Node app listening at http://${host}:${port}`)
 })
 
-server.on('close', function() {
+
+
+// Using a single function to handle multiple signals
+function close(signal) {
+    console.log(`Received ${signal}`);
     http.request({
-        host: registerHost,
-        port: registerPort,
+        host: registarHost,
+        port: registarPort,
         path: `/unregister?host=${host}&port=${port}`,
         method: 'GET'
-    }).end()
-})
-  
-process.on('SIGINT', function() {
-    server.close()
-})
+    }).end();
+}
+
+process.on('SIGINT', close);
+process.on('SIGTERM', close);
+
+function logRequest(req) {
+    const path = req.url;
+    const remoteIp = req.socket.remoteAddress;
+    const headers = JSON.stringify(req.headers);
+    const body = JSON.stringify(req.body);
+    const date = Date.now();
+    console.log(`${date} - [${remoteIp}]: ${path} headers: ${headers}, body: ${body}`);
+}
