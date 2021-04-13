@@ -1,13 +1,19 @@
 const express = require('express')
 const randomstring = require("randomstring")
 const http = require('http')
+const os = require('os')
 
 require('dotenv').config()
 
 const app = express()
-const cluster = JSON.parse(process.env.CLUSTER)
-const port = cluster[parseInt(process.env.CLUSTER_ID) - 1]
-const app_id = randomstring.generate();
+const app_id = randomstring.generate()
+
+const host = os.hostname()
+const port = parseInt(process.env.PORT)
+
+const clusters = JSON.parse(process.env.CLUSTERS)
+const cluster = clusters.find((elem) => elem === `${host}:${port}`)
+
 const state = {
     unique: Math.floor(Math.random() * 100),
     common: 0,
@@ -20,14 +26,16 @@ app.get('/', (req, res) => {
 app.get('/set-common', function (req, res) {
     state.common = parseInt(req.query.common)
 
-    cluster.forEach(element => {
-        if (element === port) {
+    clusters.forEach(element => {
+        if (element === cluster) {
             return;
         }
 
+        const [elementHost, elementPort] = element.split(':')
+
         http.request({
-            host: 'localhost',
-            port: element,
+            host: elementHost,
+            port: elementPort,
             path: `/sync?common=${req.query.common}`,
             method: 'GET'
         }, (response) => {
