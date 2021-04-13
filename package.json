@@ -3,7 +3,11 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "docker_repo": "jimonair",
   "scripts": {
+    "docker-build": "DOCKER_BUILDKIT=1 docker build --force-rm  --rm -f Dockerfile -t \"${DOCKER_REPO:-${npm_package_docker_repo}}/node:${npm_package_version}\" .",
+    "node-start": "node node.js",
+    "registar-start": "node registar.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",

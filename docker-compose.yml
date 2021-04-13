@@ -1,0 +1,67 @@
+version: "3.8"
+services:
+  node:
+    image: ${DOCKER_REPO}/node:${NODE_VESION:-1.0.0}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      DEBUG: "true"
+      PORT: 3000
+      REGISTAR_HOST: registar
+      REGISTAR_PORT: 4000
+    deploy:
+      replicas: 4
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.node-http.entrypoints=http"
+        - "traefik.http.routers.node-http.middlewares=redirect-scheme-https@file,compress@file"
+        - "traefik.http.routers.node-http.rule=Host(`node.${DOMAIN_NAME:-local}`)"
+        - "traefik.http.routers.node-http.service=node"
+        - "traefik.http.routers.node-https.entrypoints=https"
+        - "traefik.http.routers.node-https.middlewares=compress@file"
+        - "traefik.http.routers.node-https.rule=Host(`node.${DOMAIN_NAME:-local}`)"
+        - "traefik.http.routers.node-https.service=node"
+        - "traefik.http.routers.node-https.tls=true"
+        - "traefik.http.services.node.loadbalancer.server.port=3000"
+    restart: always
+    networks:
+      reverse-proxy: null
+    stop_grace_period: 1m
+    stop_signal: SIGINT
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+  registar:
+    image: ${DOCKER_REPO}/node:${NODE_VESION:-1.0.0}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      REGISTAR_PORT: 4000
+      DEBUG: "true"
+    deploy:
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.registar-http.entrypoints=http"
+        - "traefik.http.routers.registar-http.middlewares=redirect-scheme-https@file,compress@file"
+        - "traefik.http.routers.registar-http.rule=Host(`registar.${DOMAIN_NAME:-local}`)"
+        - "traefik.http.routers.registar-http.service=registar"
+        - "traefik.http.routers.registar-https.entrypoints=https"
+        - "traefik.http.routers.registar-https.middlewares=compress@file"
+        - "traefik.http.routers.registar-https.rule=Host(`registar.${DOMAIN_NAME:-local}`)"
+        - "traefik.http.routers.registar-https.service=registar"
+        - "traefik.http.routers.registar-https.tls=true"
+        - "traefik.http.services.registar.loadbalancer.server.port=4000"
+    restart: always
+    networks:
+      reverse-proxy: null
+    stop_grace_period: 1m
+    stop_signal: SIGINT
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+
+networks:
+  reverse-proxy:
+    external: true
