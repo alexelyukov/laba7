@@ -16,7 +16,7 @@ COPY --chown=node:node package.json package-lock.json ${WORKDIR}/
 RUN set -ex; \
   npm i;
 
-COPY --chown=node:node node.js registar.js ${WORKDIR}/
+COPY --chown=node:node node.js registar.js healthcheck.js ${WORKDIR}/
 COPY --chown=root:root --chmod=0755 docker-entrypoint.sh /
 
 USER node
