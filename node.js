@@ -72,6 +72,11 @@ app.get('/sync', function (req, res) {
     }))
 })
 
+app.get('/healthcheck', function(req,res){
+    logRequest(req);
+    res.status(200).send("OK")
+})
+
 app.get('/get-test', function (req, res) {
     logRequest(req);
     res.send(JSON.stringify({

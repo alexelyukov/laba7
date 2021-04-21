@@ -54,6 +54,11 @@ app.get('/unregister', (req, res) => {
     }))
 })
 
+app.get('/healthcheck', function(req,res){
+    logRequest(req);
+    res.status(200).send("OK")
+})
+
 app.listen(port, host, () => {
     console.log(`Registar app listening at http://${host}:${port}`)
 })
