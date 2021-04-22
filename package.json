@@ -9,7 +9,7 @@
     "docker-push": "docker push \"${DOCKER_REPO:-${npm_package_docker_repo}}/node:${npm_package_version}\"",
     "node-start": "node node.js",
     "registar-start": "node registar.js",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "echo \"Error: no test specified\" && exit 0",
     "stack-deploy": "DOCKER_REPO=${DOCKER_REPO:-${npm_package_docker_repo}} NODE_VERSION=${npm_package_version} docker stack deploy ${STACK_NAME:-${npm_package_name}} -c docker-compose.yml"
   },
   "author": "",
