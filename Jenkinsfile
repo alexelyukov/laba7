@@ -1,29 +1,67 @@
+properties([
+    [$class: 'BuildDiscarderProperty', strategy: [$class: 'LogRotator', numToKeepStr: '20']],
+    disableConcurrentBuilds(),
+    pipelineTriggers([[$class: 'GitHubPushTrigger']]),
+    parameters([
+        credentials(
+            credentialType: 'com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl',
+            defaultValue: 'dockerhub',
+            description: '',
+            name: 'DOCKERHUB_CREDENTIAL',
+            required: true)
+        ]
+    )
+])
+
 pipeline {
     agent any
 
     stages {
-        customStage('\u2780 Build image') {
-            script {
+      stage('\u2780 Build image'){
+        steps {
+          script {
+            timestamps{
+              ansiColor('xterm') {
                 sh 'npm run docker-build'
+              }
             }
+          }
         }
-        customStage('\u2781 Test image') {
-            script {
+      }
+      stage('\u2781 Test image'){
+        steps {
+          script {
+            timestamps{
+              ansiColor('xterm') {
                 sh 'npm run test'
+              }
             }
+          }
         }
-        customStage('\u2782 Push image to Dockerhub') {
-            script {
+      }
+      stage('\u2782 Push image to Dockerhub'){
+        steps {
+          script {
+            timestamps{
+              ansiColor('xterm') {
                 dockerLogin()
                 sh 'npm run docker-push'
+              }
             }
+          }
         }
-        customStage('\u2783 Deploy stack') {
-            script {
-                dockerLogin()
+      }
+      stage('\u2783 Deploy stack'){
+        steps {
+          script {
+            timestamps{
+              ansiColor('xterm') {
                 sh 'npm run stack-deploy'
+              }
             }
+          }
         }
+      }
     }
     post {
         always {
@@ -66,18 +104,12 @@ pipeline {
     }
 }
 
-def customStage(String context, Closure closure) {
-    stage(context){
-        timestamps{
-            ansiColor('xterm') {
-              echo env.STAGE_NAME;
-              try {
-                closure();
-              } catch (Exception err) {
-                throw err;
-              }
-            }
-        }
+def dockerLogin(){
+    withCredentials([
+            usernamePassword(credentialsId: params.DOCKERHUB_CREDENTIAL,
+                    usernameVariable: 'USERNAME',
+                    passwordVariable: 'PASSWORD')
+    ]) {
+        sh 'echo $PASSWORD | docker login --username $USERNAME --password-stdin'
     }
-
 }
